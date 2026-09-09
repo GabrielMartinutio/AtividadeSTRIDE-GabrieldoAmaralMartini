@@ -1,0 +1,30 @@
+{
+  "name": "Atividade STRIDE",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:20",
+  "postCreateCommand": "npm install && (sudo python3 -m pip install --break-system-packages semgrep || true)",
+  "remoteEnv": {
+    "JWT_SECRET": "dev-secret-codespace-stride"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        }
+      }
+    }
+  },
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "API Express",
+      "onAutoForward": "notify"
+    }
+  }
+}

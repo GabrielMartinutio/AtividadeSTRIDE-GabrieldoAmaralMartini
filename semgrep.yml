@@ -1,0 +1,152 @@
+rules:
+  # ---------------------------------------------------------------------------
+  # [S] Spoofing — chave secreta JWT hardcoded
+  # ---------------------------------------------------------------------------
+  - id: stride-spoofing-hardcoded-jwt-secret
+    languages:
+      - typescript
+      - javascript
+    severity: ERROR
+    message: "[Spoofing] Chave JWT exposta — não use secret hardcoded; use variável de ambiente."
+    patterns:
+      - pattern-either:
+          - pattern: |
+              const $SECRET = "..."
+              ...
+              jwt.sign($PAYLOAD, $SECRET, ...)
+          - pattern: |
+              const $SECRET = '...'
+              ...
+              jwt.sign($PAYLOAD, $SECRET, ...)
+          - pattern: |
+              let $SECRET = "..."
+              ...
+              jwt.sign($PAYLOAD, $SECRET, ...)
+          - pattern: jwt.sign($PAYLOAD, "...", ...)
+          - pattern: jwt.sign($PAYLOAD, '...', ...)
+
+  # ---------------------------------------------------------------------------
+  # [T] Tampering — SQL Injection por concatenação de strings
+  # ---------------------------------------------------------------------------
+  - id: stride-tampering-sql-injection
+    languages:
+      - typescript
+      - javascript
+    severity: ERROR
+    message: "[Tampering] SQL Injection — não concatene entrada do usuário na query; use prepared statements."
+    patterns:
+      - pattern-either:
+          - pattern: |
+              const $QUERY = "..." + $INPUT
+              ...
+              $DB.all($QUERY, ...)
+          - pattern: |
+              let $QUERY = "..." + $INPUT
+              ...
+              $DB.all($QUERY, ...)
+          - pattern: |
+              var $QUERY = "..." + $INPUT
+              ...
+              $DB.all($QUERY, ...)
+          - pattern: |
+              $QUERY = "..." + $INPUT
+              ...
+              $DB.all($QUERY, ...)
+          - pattern: $DB.all("..." + $INPUT, ...)
+          - pattern: $DB.all('...' + $INPUT, ...)
+          - pattern: $DB.all(`...${$INPUT}...`, ...)
+          - pattern: $DB.run("..." + $INPUT, ...)
+          - pattern: $DB.get("..." + $INPUT, ...)
+
+  # ---------------------------------------------------------------------------
+  # [R] Repudiation — catch vazio engolindo erros
+  # ---------------------------------------------------------------------------
+  - id: stride-repudiation-empty-catch
+    languages:
+      - typescript
+      - javascript
+    severity: ERROR
+    message: "[Repudiation] Catch vazio — registre o erro (log/auditoria) para garantir não-repúdio."
+    patterns:
+      - pattern-either:
+          - pattern: |
+              catch ($ERR) {
+              }
+          - pattern: |
+              catch {
+              }
+
+  # ---------------------------------------------------------------------------
+  # [I] Information Disclosure — stack trace na resposta HTTP
+  # ---------------------------------------------------------------------------
+  - id: stride-info-disclosure-stack-trace
+    languages:
+      - typescript
+      - javascript
+    severity: ERROR
+    message: "[Information Disclosure] Stack trace exposto — não retorne error.stack na resposta HTTP."
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $RES.status(500).json({
+                error: $ERR.message,
+                stack: $ERR.stack,
+              })
+          - pattern: |
+              $RES.status(500).json({ ..., stack: $ERR.stack, ... })
+          - pattern: |
+              $RES.status(...).json({ stack: $ERR.stack })
+          - pattern: |
+              $RES.json({ ..., stack: $X.stack, ... })
+
+  # ---------------------------------------------------------------------------
+  # [D] Denial of Service — regex vulnerável a ReDoS
+  # ---------------------------------------------------------------------------
+  - id: stride-dos-redos-regex
+    languages:
+      - typescript
+      - javascript
+    severity: ERROR
+    message: "[Denial of Service] Regex ineficiente (ReDoS) — evite quantificadores aninhados; use validação linear-time."
+    patterns:
+      - pattern-either:
+          - pattern-regex: '\(\[[^\]]+\]\+\)\+'
+          - pattern-regex: '\(a\+\)\+'
+          - pattern: |
+              const $RE = /^([a-zA-Z0-9]+)+@([a-zA-Z0-9]+)+\.([a-zA-Z]+)+$/
+
+  # ---------------------------------------------------------------------------
+  # [E] Elevation of Privilege — RCE via exec/eval com input do usuário
+  # ---------------------------------------------------------------------------
+  - id: stride-eop-dynamic-exec
+    languages:
+      - typescript
+      - javascript
+    severity: ERROR
+    message: "[Elevation of Privilege] Execução dinâmica insegura — não use eval/exec com input do usuário."
+    patterns:
+      - pattern-either:
+          - pattern: |
+              const { $PROP } = $REQ.body ?? ...
+              ...
+              exec($PROP, ...)
+          - pattern: |
+              const { $PROP } = $REQ.body
+              ...
+              exec($PROP, ...)
+          - pattern: |
+              const { $PROP } = $REQ.body ?? ...
+              ...
+              exec(`...${$PROP}...`, ...)
+          - pattern: |
+              const { $PROP } = $REQ.body
+              ...
+              exec(`...${$PROP}...`, ...)
+          - pattern: |
+              const $CMD = $REQ.body.$PROP
+              ...
+              exec($CMD, ...)
+          - pattern: exec($REQ.body.$PROP, ...)
+          - pattern: eval($REQ.body.$PROP)
+          - pattern: eval(...)
+          - pattern: exec(...)

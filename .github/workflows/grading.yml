@@ -1,0 +1,38 @@
+name: Grading STRIDE
+
+on:
+  push:
+    branches:
+      - '**'
+
+env:
+  JWT_SECRET: grading-secret-ci-stride
+
+jobs:
+  grade:
+    name: Testes funcionais + Scan Semgrep
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependências
+        run: npm install
+
+      - name: Executar testes funcionais (antifraude)
+        run: npm test
+
+      - name: Instalar Semgrep
+        if: success()
+        run: pip install semgrep
+
+      - name: Executar scan de segurança
+        if: success()
+        run: npm run scan

@@ -1,0 +1,14 @@
+node_modules/
+dist/
+coverage/
+*.db
+*.sqlite
+*.sqlite3
+.env
+.env.local
+.DS_Store
+*.log
+.semgrep/
+.vscode/
+!.devcontainer/
+semgrep-grade.json
